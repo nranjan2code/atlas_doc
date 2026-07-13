@@ -42,7 +42,8 @@ function formatTimestamp(value: string): string {
 }
 
 function source(filePath: string, line?: number | null): string {
-  return `/source?path=${encodeURIComponent(filePath)}${line ? `#L${line}` : ""}`;
+  const start = line && line > 750 ? `&start=${Math.max(1, line - 333)}` : "";
+  return `/source?path=${encodeURIComponent(filePath)}${start}${line ? `#L${line}` : ""}`;
 }
 
 export function Portal({ initialSnapshot, initialQuery = "", initialSearchOpen = false }: { initialSnapshot: PortalSnapshot; initialQuery?: string; initialSearchOpen?: boolean }) {
@@ -58,7 +59,8 @@ export function Portal({ initialSnapshot, initialQuery = "", initialSearchOpen =
   const fingerprintRef = useRef(snapshot.fingerprint);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const topLanguages = useMemo(() => snapshot.facts.languages.slice(0, 8), [snapshot]);
+  const isCodeProfile = snapshot.profile === "code";
+  const topFormats = useMemo(() => snapshot.facts.formats.slice(0, 8), [snapshot]);
   const onboarding = useMemo(() => snapshot.entries.slice(0, 8), [snapshot]);
   const featuredSymbols = useMemo(() => {
     const names = new Set<string>();
@@ -188,34 +190,35 @@ export function Portal({ initialSnapshot, initialQuery = "", initialSearchOpen =
     : "local directory";
 
   return <main style={{ "--accent": snapshot.portal.accent } as CSSProperties}>
+    <div aria-hidden={searchOpen || undefined} inert={searchOpen}>
     <header className="topbar">
-      <a className="brand" href="#top" aria-label="Atlas home"><span>A</span><strong>Atlas</strong><small>developer portal</small></a>
-      <button ref={searchButtonRef} className="search-button" onClick={(event) => openSearch(undefined, event.currentTarget)} aria-haspopup="dialog" aria-label="Search this project">
-        <Search size={16} aria-hidden="true"/><span className="search-copy">Search this project</span><kbd><Command size={12} aria-hidden="true"/>K</kbd>
+      <a className="brand" href="#top" aria-label="Atlas home"><span>A</span><strong>Atlas</strong><small>workspace portal</small></a>
+      <button ref={searchButtonRef} className="search-button" onClick={(event) => openSearch(undefined, event.currentTarget)} aria-haspopup="dialog" aria-label="Search this workspace">
+        <Search size={16} aria-hidden="true"/><span className="search-copy">Search this workspace</span><kbd><Command size={12} aria-hidden="true"/>K</kbd>
       </button>
       <div className="identity" title={`Index connection: ${liveStatus}`}><i className={`pulse ${liveStatus}`}/><span>{gitLabel}</span></div><p className="visually-hidden" aria-live="polite">Index connection {liveStatus}</p>
     </header>
 
     <section className="hero" id="top">
-      <div className="eyebrow">LIVE PROJECT MAP · SNAPSHOT {snapshot.fingerprint.slice(0, 8)}{snapshot.stats.limited ? " · PARTIAL INDEX" : ""}</div>
+      <div className="eyebrow">LIVE WORKSPACE MAP · SNAPSHOT {snapshot.fingerprint.slice(0, 8)}{snapshot.stats.limited ? " · SEARCH COVERAGE LIMITED" : ""}</div>
       <h1>{snapshot.project.name}</h1>
       <p>{snapshot.project.description}</p>
       <div className="hero-actions">
-        <button onClick={(event) => openSearch(undefined, event.currentTarget)}>Search the codebase <Search size={16} aria-hidden="true"/></button>
-        <a href="/browse">Browse every source <Folder size={16} aria-hidden="true"/></a>
+        <button onClick={(event) => openSearch(undefined, event.currentTarget)}>Search the workspace <Search size={16} aria-hidden="true"/></button>
+        <a href="/browse">Browse every artifact <Folder size={16} aria-hidden="true"/></a>
         <a href="/llms.txt" className="quiet-action">Agent entrypoint <Terminal size={16} aria-hidden="true"/></a>
       </div>
     </section>
 
-    <section className="metrics" aria-label="Project index statistics">
+    <section className="metrics" aria-label="Workspace index statistics">
       <Metric icon={FileCode2} label="Indexed files" value={formatNumber(snapshot.stats.files)}/>
       <Metric icon={BookOpen} label="Documentation" value={formatNumber(snapshot.stats.docs)}/>
-      <Metric icon={Code2} label="Source files" value={formatNumber(snapshot.stats.sourceFiles)}/>
-      <Metric icon={Braces} label="Symbols" value={formatNumber(snapshot.stats.symbols)}/>
+      <Metric icon={Code2} label={isCodeProfile ? "Source files" : "Structured artifacts"} value={formatNumber(snapshot.stats.sourceFiles)}/>
+      <Metric icon={Braces} label={isCodeProfile ? "Symbols" : "Anchors"} value={formatNumber(snapshot.stats.symbols)}/>
       <Metric icon={FolderGit2} label="Indexed text" value={formatBytes(snapshot.stats.bytes)}/>
     </section>
 
-    <section className="grid-section" aria-label="Project orientation">
+    <section className="grid-section" aria-label="Workspace orientation">
       <div className="panel wide">
         <div className="section-title"><span>01</span><div><small>START HERE</small><h2>Read the project in authority order.</h2></div><a href="/browse">View all <ChevronRight size={14}/></a></div>
         <div className="source-list">{onboarding.map((entry, index) => <a href={source(entry.path)} key={entry.id}>
@@ -223,28 +226,28 @@ export function Portal({ initialSnapshot, initialQuery = "", initialSearchOpen =
         </a>)}{!onboarding.length && <p className="panel-empty">No indexable text sources were found. Check the project include and exclude rules.</p>}</div>
       </div>
       <div className="panel">
-        <div className="section-title"><span>02</span><div><small>STACK</small><h2>Languages</h2></div></div>
-        <div className="language-list">{topLanguages.map((language) => <button key={language.name} onClick={(event) => openSearch(`language:${language.name}`, event.currentTarget)}>
-          <span>{language.name}</span><strong>{formatNumber(language.files)}</strong><i style={{ width: `${Math.max(8, language.files / (topLanguages[0]?.files || 1) * 100)}%` }}/>
-        </button>)}{!topLanguages.length && <p className="panel-empty">No supported source languages were detected.</p>}</div>
+        <div className="section-title"><span>02</span><div><small>{isCodeProfile ? "STACK" : "FORMATS"}</small><h2>{isCodeProfile ? "Languages" : "Formats"}</h2></div></div>
+        <div className="language-list">{topFormats.map((format) => <button key={format.name} onClick={(event) => openSearch(`language:${format.name}`, event.currentTarget)}>
+          <span>{format.name}</span><strong>{formatNumber(format.files)}</strong><i style={{ width: `${Math.max(8, format.files / (topFormats[0]?.files || 1) * 100)}%` }}/>
+        </button>)}{!topFormats.length && <p className="panel-empty">No recognized text formats were detected.</p>}</div>
       </div>
       <div className="panel">
-        <div className="section-title"><span>03</span><div><small>RUNBOOK</small><h2>Project commands</h2></div></div>
+        <div className="section-title"><span>03</span><div><small>ACTIONS</small><h2>{isCodeProfile ? "Project commands" : "Workspace actions"}</h2></div></div>
         <div className="command-list">{snapshot.facts.commands.slice(0, 8).map((item) => <div key={item.name}>
           <span>{item.name}</span><code>{item.command}</code><button onClick={() => copyCommand(item.name, item.command)} aria-label={copiedCommand === item.name ? `${item.name} command copied` : `Copy ${item.name} command`} title="Copy command">{copiedCommand === item.name ? <Check size={15}/> : <Clipboard size={15}/>}</button>
-        </div>)}{!snapshot.facts.commands.length && <p>No package scripts were detected in this project.</p>}</div>
+        </div>)}{!snapshot.facts.commands.length && <p>{isCodeProfile ? "No supported run actions were detected in this workspace." : "No workspace actions were declared."}</p>}</div>
       </div>
     </section>
 
     <section className="discovery-section" aria-label="Project map">
       <div className="panel">
-        <div className="section-title"><span>04</span><div><small>PROJECT MAP</small><h2>Code areas</h2></div><a href="/browse">Open catalog <ArrowUpRight size={14}/></a></div>
+        <div className="section-title"><span>04</span><div><small>WORKSPACE MAP</small><h2>{isCodeProfile ? "Code areas" : "Collections"}</h2></div><a href="/browse">Open catalog <ArrowUpRight size={14}/></a></div>
         <div className="area-list">{snapshot.facts.directories.slice(0, 8).map((directory) => <button key={directory.path} onClick={(event) => openSearch(`path:${directory.path}`, event.currentTarget)}>
           <Folder size={15}/><span>{directory.path}</span><strong>{formatNumber(directory.files)}</strong><ChevronRight size={14}/>
         </button>)}{!snapshot.facts.directories.length && <p className="panel-empty">Code areas appear after Atlas admits the first source.</p>}</div>
       </div>
       <div className="panel">
-        <div className="section-title"><span>05</span><div><small>NAVIGATION</small><h2>Key symbols</h2></div><a href="/api/symbols">Symbol API <ArrowUpRight size={14}/></a></div>
+        <div className="section-title"><span>05</span><div><small>NAVIGATION</small><h2>{isCodeProfile ? "Key symbols" : "Key anchors"}</h2></div><a href="/api/symbols">Anchor API <ArrowUpRight size={14}/></a></div>
         <div className="symbol-list">{featuredSymbols.map((symbol) => <a href={source(symbol.path, symbol.line)} key={symbol.id}>
           <Braces size={15}/><div><strong>{symbol.name}</strong><small>{symbol.path}:{symbol.line}</small></div><em>{symbol.language}</em>
         </a>)}{!featuredSymbols.length && <p className="panel-empty">No navigational symbols were extracted for this project.</p>}</div>
@@ -260,23 +263,25 @@ export function Portal({ initialSnapshot, initialQuery = "", initialSearchOpen =
       </div>
     </section>
 
-    <footer><strong>Atlas</strong><span>{formatNumber(snapshot.stats.files)} indexed sources · refreshed {formatTimestamp(snapshot.generatedAt)}</span><a href="/api/health">API health</a><a href="/llms.txt">llms.txt</a></footer>
+    <footer><strong>Atlas</strong><span>{formatNumber(snapshot.stats.files)} indexed artifacts · refreshed {formatTimestamp(snapshot.generatedAt)}</span><a href="/api/health">API health</a><a href="/llms.txt">llms.txt</a></footer>
+    </div>
 
     {searchOpen && <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) closeSearch(); }}>
       <div ref={dialogRef} className="dialog" role="dialog" aria-modal="true" aria-labelledby="search-title" onKeyDown={trapDialogFocus}>
         <h2 id="search-title" className="visually-hidden">Search {snapshot.project.name}</h2>
-        <div className="search-field"><Search size={20} aria-hidden="true"/><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleSearchKeyDown} placeholder="Search files, concepts, or symbols…" aria-label="Search files, concepts, or symbols" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="search-results" aria-activedescendant={searchStatus === "ready" && results[activeIndex] ? `search-result-${activeIndex}` : undefined}/><button onClick={closeSearch} aria-label="Close search"><X size={18}/></button></div>
+        <div className="search-field"><Search size={20} aria-hidden="true"/><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleSearchKeyDown} placeholder="Search artifacts, concepts, or anchors…" aria-label="Search artifacts, concepts, or anchors" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="search-results" aria-activedescendant={searchStatus === "ready" && results[activeIndex] ? `search-result-${activeIndex}` : undefined}/><button onClick={closeSearch} aria-label="Close search"><X size={18}/></button></div>
         <div className="search-meta"><span>Filter with <code>language:</code> <code>kind:</code> <code>path:</code></span><kbd>↑↓ navigate · ↵ open · esc close</kbd></div>
         <div className="results" id="search-results" role={searchStatus === "ready" && results.length ? "listbox" : undefined} aria-label="Search results">
           {searchStatus === "loading" && <div className="search-state"><LoaderCircle className="spin" size={20}/><p>Searching the live index…</p></div>}
           {searchStatus === "error" && <div className="search-state"><p>Search could not reach the index.</p><button onClick={() => setRetryKey((value) => value + 1)}>Try again</button></div>}
           {searchStatus === "idle" && <div className="search-welcome">
-            <small>SEARCH THE COMPLETE PROJECT</small><h3>Find a file, concept, or exported symbol.</h3>
-            <div className="quick-filters"><button onClick={() => setQuery("kind:documentation")}>Documentation</button><button onClick={() => setQuery("kind:test")}>Tests</button>{topLanguages.slice(0, 3).map((language) => <button key={language.name} onClick={() => setQuery(`language:${language.name}`)}>{language.name}</button>)}</div>
+            <small>SEARCH THE COMPLETE WORKSPACE</small><h3>Find an artifact, concept, or anchor.</h3>
+            <div className="quick-filters"><button onClick={() => setQuery("kind:documentation")}>Documentation</button><button onClick={() => setQuery("kind:test")}>Verification</button>{topFormats.slice(0, 3).map((format) => <button key={format.name} onClick={() => setQuery(`language:${format.name}`)}>{format.name}</button>)}</div>
             <div className="suggested-list">{onboarding.slice(0, 5).map((entry) => <a href={source(entry.path)} key={entry.id}><span><strong>{entry.title}</strong><small>{entry.path}</small></span><ChevronRight size={15}/></a>)}</div>
           </div>}
-          {searchStatus === "ready" && results.map(({ entry, matches, line, symbol }, index) => <a id={`search-result-${index}`} href={source(entry.path, line)} key={entry.id} role="option" aria-selected={index === activeIndex} data-active={index === activeIndex} onMouseEnter={() => setActiveIndex(index)}>
+          {searchStatus === "ready" && results.map(({ entry, matches, line, symbol, snippet }, index) => <a id={`search-result-${index}`} href={source(entry.path, line)} key={entry.id} role="option" aria-selected={index === activeIndex} data-active={index === activeIndex} onMouseEnter={() => setActiveIndex(index)}>
             <div><strong>{symbol ?? entry.title}</strong><span>{symbol ? "symbol" : entry.kind}</span></div><p>{symbol ? `${entry.title} · ${entry.summary}` : entry.summary}</p><code>{entry.path}{line ? `:${line}` : ""}</code><small>{matches.join(" · ")}</small>
+            {snippet && <span className="search-snippet">{snippet}</span>}
           </a>)}
           {searchStatus === "ready" && !results.length && <div className="search-state"><p>No indexed source matched “{query}”.</p><button onClick={() => setQuery("")}>Clear search</button></div>}
         </div>

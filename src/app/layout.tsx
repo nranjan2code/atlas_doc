@@ -4,8 +4,8 @@ import "./reader.css";
 import "./browse.css";
 
 export const metadata: Metadata = {
-  title: "Atlas — Developer Portal",
-  description: "A live map of any codebase",
+  title: "Atlas — Workspace Portal",
+  description: "A live map of any workspace",
   robots: { index: false, follow: false },
 };
 

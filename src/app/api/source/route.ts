@@ -21,12 +21,14 @@ export function GET(request: NextRequest) {
   if (Number.isNaN(start) || Number.isNaN(end) || (start !== null && end !== null && end < start)) {
     return NextResponse.json({ error: "Line ranges must be positive and end at or after start." }, { status: 400 });
   }
-  if (start !== null && end !== null && end - start + 1 > 2_000) {
-    return NextResponse.json({ error: "A line range may contain at most 2,000 lines." }, { status: 400 });
-  }
   const lines = source.content.split("\n");
   const firstLine = start ?? 1;
-  const lastLine = end ?? (start === null ? lines.length : Math.min(lines.length, firstLine + 199));
+  const requestedLastLine = end ?? (start === null ? lines.length : firstLine + 1_999);
+  if (firstLine > lines.length) return NextResponse.json({ error: "The requested start line is outside this artifact." }, { status: 416 });
+  if (requestedLastLine - firstLine + 1 > 2_000) {
+    return NextResponse.json({ error: "A line range may contain at most 2,000 lines." }, { status: 400 });
+  }
+  const lastLine = Math.min(lines.length, requestedLastLine);
   const content = lines.slice(firstLine - 1, lastLine).join("\n");
   const etag = `"${createHash("sha256").update(content).digest("hex").slice(0, 24)}"`;
   if (request.headers.get("if-none-match") === etag) return new NextResponse(null, { status: 304, headers: { ETag: etag } });

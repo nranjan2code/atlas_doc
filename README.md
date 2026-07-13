@@ -1,82 +1,62 @@
 # Atlas
 
-Atlas turns a Git repository or ordinary code directory into a live,
-source-linked developer portal for humans and coding agents.
+Atlas turns a Git repository, ordinary directory, or mixed-content workspace
+into a live, source-linked portal for people and agents.
 
-It indexes the project directly. There is no documentation database, generated
-CMS, required AI provider, or requirement that the target use a particular
-language or build system. The goal is simple: help a new contributor find the
-right entry point, source of truth, and run command in minutes.
+It indexes the workspace directly. There is no documentation database,
+generated CMS, required AI provider, or required domain. Atlas keeps a neutral
+artifact core and automatically selects a code profile when it finds a software
+workspace. Code navigation is an adapter, not the product's data model.
 
 ## Quick start
 
 ```bash
 pnpm install
-pnpm atlas /path/to/project
+pnpm atlas /path/to/workspace
 ```
 
 Open `http://127.0.0.1:3010`.
 
-To run this checkout directly:
-
-```bash
-node scripts/atlas.mjs /path/to/project
-```
-
 Atlas accepts directories with or without Git and with or without a
 `package.json`.
 
-### CLI options
-
-```text
-atlas [project-directory] [options]
-
--p, --port <number>  Loopback port (default: 3010)
-    --production     Start a previously built production server
--h, --help           Show help
--v, --version        Show the Atlas version
-```
-
 ## Human workflows
 
-- Start on `/` for project identity, authoritative sources, languages, code
-  areas, commands, and key symbols.
-- Press `⌘K` or `Ctrl+K` anywhere on the portal to search files, concepts, and
-  exported symbols. Arrow keys and Enter navigate results.
-- Filter command search with `language:TypeScript`, `kind:test`, or
-  `path:src/app`. Filters can be combined with ordinary terms.
-- Open `/browse` for the complete, filterable source catalog.
-- Source pages include stable line anchors, a symbol outline, raw-source access,
-  copy actions, and previous/next navigation.
+- Start on `/` for workspace identity, authoritative artifacts, formats,
+  collections, actions, and anchors.
+- Press `⌘K` or `Ctrl+K` to search artifacts, concepts, and anchors.
+- Filter with `format:TypeScript`, `kind:test`, or `path:src/app`.
+- Open `/browse` for the complete artifact catalog.
+- Artifact pages expose safe raw access, source-linked lines, anchors, and
+  bounded line ranges for large text files.
 
 ## Agent interfaces
 
 - `/llms.txt` — discovery entrypoint and trust contract
-- `/api/context` — Markdown onboarding with cited repository excerpts
+- `/api/context` — evidence-centered onboarding with cited ranges
 - `/api/context?q=architecture&format=json` — structured topic context
-- `/api/search?q=language%3ATypeScript+authentication` — ranked file and symbol search
-- `/api/symbols?q=client` — extracted symbols with reader and raw line links
-- `/api/source?path=README.md&start=1&end=80` — safe raw source and line ranges
-- `/api/asset?path=docs/diagram.png` — safely admitted local image assets
+- `/api/search?q=format%3ATypeScript+authentication` — ranked search
+- `/api/symbols?q=client` — extracted anchors with line links
+- `/api/source?path=README.md&start=1&end=80` — safe raw artifact ranges
+- `/api/asset?path=docs/diagram.png` — safely admitted binary artifacts
 - `/api/catalog?limit=500&cursor=0` — paginated machine-readable catalog
-- `/api/catalog?view=full` — explicit complete snapshot for smaller projects
-- `/api/catalog?view=portal` — compact portal snapshot
-- `/api/health` — Git and snapshot identity
-- `/api/events` — live repository-change stream
+- `/api/catalog?view=full` — explicit complete snapshot for smaller workspaces
+- `/api/health` — snapshot identity and index health
+- `/api/events` — live workspace-change stream
 
-All machine responses carry a schema version or snapshot identity. Repository
-content is explicitly marked as untrusted data in agent-context responses.
+All machine responses carry a schema version or snapshot identity. Workspace
+content is explicitly untrusted data in agent-context responses.
 
-## Optional configuration
+## Configuration
 
-Add `atlas.yaml` or `atlas.yml` at the target-project root:
+Add `atlas.yaml` or `atlas.yml` at the workspace root:
 
 ```yaml
-project:
-  name: Payments Platform
-  description: Services and contracts for payment processing
+workspace:
+  name: Operations Workspace
+  description: Evidence, runbooks, records, and source material
 
-source:
+content:
   include: ["**/*"]
   exclude: ["**/fixtures/**"]
   maxFileBytes: 1000000
@@ -86,7 +66,7 @@ source:
 authority:
   - match: AGENTS.md
     rank: 100
-    label: Agent contract
+    label: Workspace contract
     canonical: true
   - match: "docs/architecture/**"
     rank: 80
@@ -94,41 +74,35 @@ authority:
 
 portal:
   accent: "#b36b22"
+  profile: auto # auto, code, or general
 ```
 
-See `atlas.example.yaml` for a copyable starter. Configuration is bounded and
-validated before indexing.
+`project` and `source` remain supported as compatibility aliases for
+`workspace` and `content`.
 
-## Supported intelligence
+## Supported content
 
-Atlas detects common project manifests and indexes text sources in TypeScript,
-JavaScript, Rust, Python, Go, Java, Kotlin, Swift, C#, C/C++, Ruby, PHP, Scala,
-Shell, SQL, Markdown, JSON, YAML, TOML, XML, CSS, and HTML.
-
-Common PNG, JPEG, GIF, WebP, AVIF, ICO, BMP, and SVG assets are admitted through
-the same ignore, size, symlink, and repository-boundary checks. Markdown readers
-resolve local diagrams through the sandboxed asset endpoint.
+Atlas safely indexes text artifacts even when their extension is unknown. It
+labels common formats including source languages, Markdown, JSON/YAML/TOML,
+plain text, CSV/TSV, RST, AsciiDoc, Terraform, GraphQL, and notebooks. Images,
+PDFs, and common office artifacts are cataloged as binary artifacts; images
+render inline and other binary artifacts receive a sandboxed raw view.
 
 Symbol extraction currently covers TypeScript, JavaScript, Rust, Python, Go,
-and Java using conservative navigation-oriented extractors. These results are
-discovery aids, not compiler or language-server claims.
+and Java. These anchors are discovery aids, not compiler or language-server
+claims.
 
 ## Safety boundary
 
-Atlas is read-only and binds to loopback. The scanner:
+Atlas is read-only and binds to loopback. It never executes workspace code,
+honors repository ignores, excludes common secrets, and bounds configuration,
+file, repository, search, and raw-range sizes. Admitted bytes live with an
+immutable in-memory snapshot, so reader/API responses never reopen mutable
+workspace paths.
 
-- does not follow symlinks or execute repository code;
-- disables Git filesystem monitors, hooks, submodule recursion, prompts, and
-  optional locks for its read-only Git inspection;
-- honors repository `.gitignore` files;
-- excludes common secrets, dependency trees, virtual environments, and build
-  output;
-- bounds configuration, file, repository, and raw line-range sizes; and
-- revalidates admitted source through a no-follow file descriptor before every
-  raw read.
-
-Local mode has no authentication. Put authenticated ingress in front of Atlas
-before any shared deployment.
+Local mode has no authentication. Shared deployment requires authenticated
+ingress, transport security, and an access model appropriate to the indexed
+workspace.
 
 ## Validation
 
@@ -138,6 +112,6 @@ pnpm build
 pnpm audit --prod
 ```
 
-The test suite covers symbol extraction, fielded search, compact snapshots,
-configuration limits, Git fsmonitor isolation, `.gitignore`, secret exclusion,
-and source symlink-swap protection.
+The suite covers nested API routes, fielded search, compact snapshots,
+configuration limits, Git isolation, ignore rules, secret exclusion,
+symlink-swap protection, general-workspace formats, and raw-range contracts.

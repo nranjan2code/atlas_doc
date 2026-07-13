@@ -12,7 +12,7 @@ export interface AtlasConfig {
   project: { name: string; description?: string };
   source: { include: string[]; exclude: string[]; maxFileBytes: number; maxFiles: number; maxTotalBytes: number };
   authority: AuthorityRule[];
-  portal: { accent: string };
+  portal: { accent: string; profile: "auto" | "code" | "general" };
 }
 
 export interface CatalogEntry {
@@ -44,6 +44,7 @@ export interface SymbolEntry {
 
 export interface ProjectFacts {
   languages: Array<{ name: string; files: number }>;
+  formats: Array<{ name: string; files: number }>;
   manifests: string[];
   commands: Array<{ name: string; command: string; source: string }>;
   directories: Array<{ path: string; files: number }>;
@@ -53,6 +54,7 @@ export interface AtlasSnapshot {
   schemaVersion: 1;
   project: AtlasConfig["project"];
   portal: AtlasConfig["portal"];
+  profile: "code" | "general";
   generatedAt: string;
   fingerprint: string;
   git: { available: boolean; head: string | null; branch: string | null; dirtyPaths: number | null };
@@ -74,4 +76,5 @@ export interface SearchHit {
   matches: string[];
   line: number | null;
   symbol: string | null;
+  snippet: string | null;
 }

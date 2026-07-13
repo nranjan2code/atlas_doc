@@ -139,6 +139,7 @@ footer a:hover { color: var(--ink); }
 .results > a p { color: var(--muted); margin: 7px 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .results > a code { font-size: 11px; }
 .results > a > small { float: right; color: var(--accent-ink); }
+.search-snippet { display: block; margin-top: 8px; color: var(--muted); font: 11px/1.45 ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-state { min-height: 220px; padding: 44px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); text-align: center; }
 .search-state button { border: 1px solid var(--line); background: transparent; padding: 9px 14px; cursor: pointer; }
 .search-welcome { padding: 28px 22px 20px; }

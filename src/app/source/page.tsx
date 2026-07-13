@@ -10,6 +10,7 @@ import { LineAnchorScroller } from "@/components/line-anchor-scroller";
 import { SourceActions } from "@/components/source-actions";
 
 export const dynamic = "force-dynamic";
+const RENDER_LINE_LIMIT = 1_000;
 
 function slugify(value: string): string {
   return value.toLowerCase().trim().replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s+/g, "-").replace(/-+/g, "-");
@@ -79,18 +80,27 @@ function highlightLine(line: string, language: string | null): ReactNode[] {
   return nodes.length ? nodes : [" "];
 }
 
-export default async function SourcePage({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
-  const requested = (await searchParams).path ?? "";
+export default async function SourcePage({ searchParams }: { searchParams: Promise<{ path?: string; start?: string }> }) {
+  const params = await searchParams;
+  const requested = params.path ?? "";
   const source = readSource(requested);
   if (!source) notFound();
   const snapshot = getSnapshot();
   const markdown = /\.(md|mdx)$/i.test(source.entry.path);
   const asset = source.entry.kind === "asset";
+  const imageAsset = /\.(png|jpe?g|gif|webp|avif|ico|bmp|svg)$/i.test(source.entry.path);
   const entries = [...snapshot.entries].sort((a, b) => a.path.localeCompare(b.path));
   const index = entries.findIndex((entry) => entry.path === source.entry.path);
   const previous = index > 0 ? entries[index - 1] : null;
   const next = index >= 0 && index < entries.length - 1 ? entries[index + 1] : null;
   const symbols = snapshot.symbols.filter((symbol) => symbol.path === source.entry.path);
+  const allLines = asset ? [] : source.content.split("\n");
+  const requestedStart = Number(params.start ?? 1);
+  const firstRenderedLine = Number.isInteger(requestedStart) && requestedStart > 0 ? Math.min(requestedStart, Math.max(1, allLines.length)) : 1;
+  const renderedLines = allLines.slice(firstRenderedLine - 1, firstRenderedLine - 1 + RENDER_LINE_LIMIT);
+  const lastRenderedLine = firstRenderedLine + renderedLines.length - 1;
+  const visibleSymbols = symbols.filter((symbol) => symbol.line >= firstRenderedLine && symbol.line <= lastRenderedLine);
+  const lineHref = (line: number) => `/source?path=${encodeURIComponent(source.entry.path)}${allLines.length > RENDER_LINE_LIMIT ? `&start=${Math.max(1, line - Math.floor(RENDER_LINE_LIMIT / 3))}` : ""}#L${line}`;
   const segments = source.entry.path.split("/");
   const rawHref = `/api/source?path=${encodeURIComponent(source.entry.path)}`;
   const headingCounts = new Map<string, number>();
@@ -107,12 +117,12 @@ export default async function SourcePage({ searchParams }: { searchParams: Promi
     <header className="reader-header">
       <div className="reader-kind"><FileCode2 size={16}/><span>{source.entry.kind} · {source.entry.kind === "asset" ? "image" : source.entry.language ?? "text"}</span>{source.entry.canonical && <strong>canonical</strong>}</div>
       <div className="reader-heading"><div><h1>{source.entry.title}</h1><code>{source.entry.path}</code></div><SourceActions path={source.entry.path} rawHref={asset ? `/api/asset?path=${encodeURIComponent(source.entry.path)}` : rawHref}/></div>
-      <div className="reader-facts"><span>{formatBytes(source.entry.size)}</span>{!asset && <span>{source.content.split("\n").length.toLocaleString("en-US")} lines</span>}{symbols.length > 0 && <span>{symbols.length.toLocaleString("en-US")} symbols</span>}<span>Snapshot {snapshot.fingerprint.slice(0, 8)}</span></div>
+      <div className="reader-facts"><span>{formatBytes(source.entry.size)}</span>{!asset && <span>{allLines.length.toLocaleString("en-US")} lines</span>}{symbols.length > 0 && <span>{symbols.length.toLocaleString("en-US")} anchors</span>}<span>Snapshot {snapshot.fingerprint.slice(0, 8)}</span></div>
     </header>
-    <div className={`reader-layout ${symbols.length ? "with-outline" : ""}`}>
-      {symbols.length > 0 && <aside className="symbol-outline"><small>SYMBOLS IN THIS FILE</small>{symbols.map((symbol) => <a href={`#L${symbol.line}`} key={symbol.id}><Braces size={13}/><span><strong>{symbol.name}</strong><em>Line {symbol.line}</em></span></a>)}</aside>}
+    <div className={`reader-layout ${visibleSymbols.length ? "with-outline" : ""}`}>
+      {visibleSymbols.length > 0 && <aside className="symbol-outline"><small>ANCHORS IN THIS VIEW</small>{visibleSymbols.map((symbol) => <a href={lineHref(symbol.line)} key={symbol.id}><Braces size={13}/><span><strong>{symbol.name}</strong><em>Line {symbol.line}</em></span></a>)}</aside>}
       <article className={asset ? "asset-document" : markdown ? "document" : "code-document"}>
-        {asset ? <figure><img src={`/api/asset?path=${encodeURIComponent(source.entry.path)}`} alt={source.entry.title}/><figcaption>{source.entry.path}</figcaption></figure> : markdown ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+        {asset ? imageAsset ? <figure><img src={`/api/asset?path=${encodeURIComponent(source.entry.path)}`} alt={source.entry.title}/><figcaption>{source.entry.path}</figcaption></figure> : <section className="binary-document"><FileCode2 size={30}/><h2>{source.entry.title}</h2><p>This artifact is indexed for discovery and available through the sandboxed raw endpoint.</p><a href={`/api/asset?path=${encodeURIComponent(source.entry.path)}`}>Open artifact</a></section> : markdown ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
           a: ({ href, children }) => {
             const resolved = markdownHref(source.entry.path, href);
             return resolved.external ? <a href={resolved.href} target="_blank" rel="noreferrer">{children}</a> : resolved.href.startsWith("mailto:") || resolved.href.startsWith("#") ? <a href={resolved.href}>{children}</a> : <Link href={resolved.href}>{children}</Link>;
@@ -122,7 +132,7 @@ export default async function SourcePage({ searchParams }: { searchParams: Promi
           h2: ({ children }) => <h2 id={headingId(children)}>{children}</h2>,
           h3: ({ children }) => <h3 id={headingId(children)}>{children}</h3>,
           h4: ({ children }) => <h4 id={headingId(children)}>{children}</h4>,
-        }}>{source.content}</ReactMarkdown> : <div className="code-frame" tabIndex={0} aria-label={`Source code for ${source.entry.path}`}><ol className="code-lines">{source.content.split("\n").map((line, lineIndex) => <li id={`L${lineIndex + 1}`} key={lineIndex}><a href={`#L${lineIndex + 1}`} className="line-number" aria-label={`Line ${lineIndex + 1}`} tabIndex={-1}>{lineIndex + 1}</a><code>{highlightLine(line, source.entry.language)}</code></li>)}</ol></div>}
+        }}>{source.content}</ReactMarkdown> : <><div className="code-frame" tabIndex={0} aria-label={`Source code for ${source.entry.path}`}><ol className="code-lines" start={firstRenderedLine}>{renderedLines.map((line, lineIndex) => { const lineNumber = firstRenderedLine + lineIndex; return <li id={`L${lineNumber}`} key={lineNumber}><a href={`#L${lineNumber}`} className="line-number" aria-label={`Line ${lineNumber}`} tabIndex={-1}>{lineNumber}</a><code>{highlightLine(line, source.entry.language)}</code></li>; })}</ol></div>{allLines.length > RENDER_LINE_LIMIT && <nav className="line-pagination" aria-label="Artifact line ranges"><span>Lines {firstRenderedLine.toLocaleString("en-US")}–{lastRenderedLine.toLocaleString("en-US")} of {allLines.length.toLocaleString("en-US")}</span>{firstRenderedLine > 1 && <Link href={`/source?path=${encodeURIComponent(source.entry.path)}&start=${Math.max(1, firstRenderedLine - RENDER_LINE_LIMIT)}`}>Previous lines</Link>}{lastRenderedLine < allLines.length && <Link href={`/source?path=${encodeURIComponent(source.entry.path)}&start=${lastRenderedLine + 1}`}>Next lines</Link>}</nav>}</>}
       </article>
     </div>
     <nav className="reader-pagination" aria-label="Adjacent source files">

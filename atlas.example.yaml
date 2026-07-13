@@ -1,8 +1,8 @@
-project:
-  name: Example Project
-  description: Source-linked developer portal
+workspace:
+  name: Example Workspace
+  description: Source-linked artifact portal
 
-source:
+content:
   include:
     - "**/*"
   exclude:
@@ -23,3 +23,4 @@ authority:
 
 portal:
   accent: "#d99a3d"
+  profile: auto

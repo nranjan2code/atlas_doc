@@ -17,6 +17,12 @@ test("validates portal colors and applies bounded defaults", () => {
     assert.throws(() => loadConfig(root));
     writeFileSync(path.join(root, "atlas.yaml"), "source:\n  include: ['../**']\n");
     assert.throws(() => loadConfig(root), /Patterns must be relative/);
+    writeFileSync(path.join(root, "atlas.yaml"), "workspace:\n  name: Research hub\nportal:\n  profile: general\n  accent: '#ffffff'\n");
+    assert.throws(() => loadConfig(root), /contrast/);
+    writeFileSync(path.join(root, "atlas.yaml"), "workspace:\n  name: Research hub\nportal:\n  profile: general\n  accent: '#336699'\n");
+    const workspace = loadConfig(root);
+    assert.equal(workspace.project.name, "Research hub");
+    assert.equal(workspace.portal.profile, "general");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
