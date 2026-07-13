@@ -1,0 +1,25 @@
+project:
+  name: Example Project
+  description: Source-linked developer portal
+
+source:
+  include:
+    - "**/*"
+  exclude:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/dist/**"
+    - "**/.env*"
+  maxTotalBytes: 250000000
+
+authority:
+  - match: AGENTS.md
+    rank: 100
+    label: Agent contract
+    canonical: true
+  - match: "docs/architecture/**"
+    rank: 80
+    canonical: true
+
+portal:
+  accent: "#d99a3d"

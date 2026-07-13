@@ -1,0 +1,71 @@
+.browse-page { min-height: 100vh; background: #f8f4eb; }
+.browse-topbar { min-height: 68px; padding: 0 5vw; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 24px; color: var(--muted); font-size: 12px; }
+.browse-topbar > a { display: flex; align-items: center; gap: 7px; color: var(--accent-ink); }
+.browse-topbar > span { margin: auto; font-family: Georgia, serif; font-size: 16px; color: var(--ink); }
+.browse-search { color: var(--muted) !important; }
+.browse-hero { padding: 64px 7vw 55px; border-bottom: 1px solid var(--line); background: radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent), transparent 87%), transparent 35%); }
+.browse-hero small { color: var(--accent-ink); letter-spacing: .17em; font-weight: 650; }
+.browse-hero h1 { font: clamp(48px, 7vw, 84px)/.95 Georgia, serif; letter-spacing: -.045em; margin: 18px 0; }
+.browse-hero p { font: 19px/1.55 Georgia, serif; color: var(--muted); max-width: 720px; }
+.browse-controls { padding: 18px 5vw; border-bottom: 1px solid var(--line); display: flex; align-items: end; gap: 11px; background: var(--paper); position: sticky; top: 0; z-index: 5; }
+.browse-controls > label:first-child { height: 43px; flex: 1; border: 1px solid var(--line); background: #fff8; display: flex; align-items: center; gap: 9px; padding: 0 12px; }
+.browse-controls input { border: 0; outline: 0; background: transparent; width: 100%; }
+.browse-controls > label:first-child:focus-within { border-color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+.browse-controls > label:not(:first-child) { display: grid; gap: 4px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+.browse-controls select { height: 43px; min-width: 145px; border: 1px solid var(--line); background: #fff8; padding: 0 32px 0 10px; color: var(--ink); }
+.browse-controls > button, .browse-controls > a { height: 43px; border: 1px solid var(--dark); padding: 0 16px; display: inline-flex; align-items: center; background: var(--dark); color: var(--paper); cursor: pointer; }
+.browse-controls > a { border-color: var(--line); background: transparent; color: var(--muted); }
+.browse-layout { width: min(1440px, 100%); margin: auto; padding: 46px 5vw 90px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 34px; }
+.browse-layout > aside { align-self: start; position: sticky; top: 88px; border-top: 1px solid var(--line); }
+.browse-aside-title { display: flex; align-items: center; gap: 8px; padding: 15px 3px; border-bottom: 1px solid var(--line); }
+.browse-layout > aside > a { display: flex; justify-content: space-between; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.browse-layout > aside > a[data-active="true"], .browse-layout > aside > a:hover { color: var(--accent-ink); padding-left: 9px; }
+.browse-layout > aside em { font-style: normal; font-family: Georgia, serif; }
+.browse-results { min-width: 0; border: 1px solid var(--line); background: var(--paper-raised); }
+.browse-summary { padding: 24px; border-bottom: 1px solid var(--line); display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.browse-summary small { color: var(--accent-ink); letter-spacing: .14em; font-size: 10px; }
+.browse-summary h2 { font: 28px Georgia, serif; margin: 5px 0 0; }
+.browse-summary > span { color: var(--muted); font: 10px ui-monospace, monospace; }
+.catalog-list > a { min-height: 73px; padding: 14px 20px; display: grid; grid-template-columns: auto minmax(180px, 1fr) minmax(180px, auto) 70px auto; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
+.catalog-list > a:hover { background: #eee8dd; }
+.catalog-list strong, .catalog-list code { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.catalog-list code { margin-top: 5px; color: var(--muted); font-size: 10px; }
+.catalog-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
+.catalog-tags span { padding: 4px 6px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.catalog-tags .canonical { border-color: color-mix(in srgb, var(--accent), transparent 45%); color: var(--accent-ink); }
+.catalog-list em { color: var(--muted); font-style: normal; font-size: 10px; text-align: right; }
+.catalog-empty { min-height: 300px; display: grid; place-content: center; text-align: center; padding: 30px; }
+.catalog-empty h3 { font: 27px Georgia, serif; margin: 0; }
+.catalog-empty p { color: var(--muted); }
+.catalog-empty a { color: var(--accent-ink); text-decoration: underline; }
+.catalog-pagination { padding: 17px 20px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; color: var(--muted); font-size: 11px; }
+.catalog-pagination a { display: flex; align-items: center; gap: 5px; color: var(--accent-ink); }
+.catalog-pagination a:last-child { justify-self: end; }
+
+@media (max-width: 850px) {
+  .browse-controls { position: static; flex-wrap: wrap; align-items: end; }
+  .browse-controls > label:first-child { flex-basis: 100%; }
+  .browse-controls > label:not(:first-child) { flex: 1; }
+  .browse-controls select { width: 100%; min-width: 0; }
+  .browse-layout { grid-template-columns: 1fr; padding-top: 25px; }
+  .browse-layout > aside { position: static; display: flex; gap: 7px; overflow: auto; border: 0; padding-bottom: 4px; }
+  .browse-aside-title { display: none; }
+  .browse-layout > aside > a { flex: 0 0 auto; border: 1px solid var(--line); padding: 8px 10px; gap: 8px; }
+  .catalog-list > a { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .catalog-tags, .catalog-list em { display: none; }
+}
+
+@media (max-width: 560px) {
+  .browse-topbar { padding: 0 17px; }
+  .browse-topbar > span { display: none; }
+  .browse-search { margin-left: auto; font-size: 0; }
+  .browse-hero { padding: 52px 20px 42px; }
+  .browse-hero h1 { font-size: 52px; }
+  .browse-controls { padding: 14px 16px; }
+  .browse-controls > label:not(:first-child) { flex-basis: calc(50% - 6px); }
+  .browse-controls > button { flex: 1; justify-content: center; }
+  .browse-layout { padding: 22px 16px 60px; }
+  .browse-summary { padding: 19px 16px; }
+  .browse-summary > span { display: none; }
+  .catalog-list > a { padding: 14px 15px; gap: 10px; }
+}
