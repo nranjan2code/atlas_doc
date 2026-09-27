@@ -1,10 +1,33 @@
 {
   "name": "atlas-developer-portal",
   "version": "0.1.0",
-  "private": true,
+  "description": "Read-only workspace discovery and source-linked developer portal for humans and AI agents",
+  "license": "MIT",
+  "author": "Nisheeth Ranjan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nranjan2code/atlas_doc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nranjan2code/atlas_doc/issues"
+  },
+  "homepage": "https://github.com/nranjan2code/atlas_doc#readme",
+  "keywords": [
+    "developer-portal",
+    "documentation",
+    "read-only",
+    "code-search",
+    "llms-txt",
+    "agent-context",
+    "workspace-navigator"
+  ],
   "type": "module",
-  "engines": { "node": ">=20.9.0" },
-  "bin": { "atlas": "./scripts/atlas.mjs" },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "bin": {
+    "atlas": "./scripts/atlas.mjs"
+  },
   "scripts": {
     "atlas": "node scripts/atlas.mjs",
     "dev": "next dev --hostname 127.0.0.1 --port 3010",
@@ -19,7 +42,7 @@
     "ignore": "^7.0.5",
     "lucide-react": "^0.564.0",
     "minimatch": "^10.2.4",
-    "next": "16.2.9",
+    "next": "16.2.11",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-markdown": "^10.1.0",
@@ -36,7 +59,11 @@
   },
   "pnpm": {
     "overrides": {
-      "postcss": "8.5.10"
+      "postcss": ">=8.5.23",
+      "sharp@<0.35.0": ">=0.35.0",
+      "brace-expansion@>=4.0.0 <5.0.9": ">=5.0.9",
+      "next@>=16.0.0 <16.3.3": ">=16.3.3",
+      "sharp@<0.35.4": ">=0.35.4"
     }
   },
   "packageManager": "pnpm@10.29.3"
